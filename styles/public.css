@@ -1,0 +1,30 @@
+:root {
+    --discord-blue: #7289da;
+    --dark-gray: #424549;
+    --medium-gray: #36393e;
+    --light-gray: #282b30;
+    --dark-steel: #1e2124;
+}
+
+* {
+    margin:0;
+    padding:0;
+    color: white;
+}
+
+body {
+    height: 100vh !important;
+    background: var(--discord-blue);
+    overflow: hidden;
+}
+
+#main {
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.swal2-input {
+    color: black !important;
+}

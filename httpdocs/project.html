@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project</title>
+    <link rel="stylesheet" href="/public.css">
+    <link rel="stylesheet" href="/project.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+    <script src="/project.js" defer></script>
+</head>
+<body>
+    <div id="main">
+        <div id="container" onload="loadData()">
+            <h1 id="title"></h1>
+            <button id="editProjectName" onclick="editProjectName()">Edit Name</button>
+            <button id="exportProject" onclick="exportProject()">Export Project</button>
+            <h2 id="description"></h2><br>
+            <h3 id="section-title">Commands:</h3>
+            <div id="grid" class="bot-list"> 
+                
+            </div>
+        </div>
+    </div>
+</body>
+</html>
