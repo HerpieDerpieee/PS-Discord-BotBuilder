@@ -1,0 +1,8 @@
+{
+    "db": {
+        "username":"root",
+        "password": "example_password",
+        "location": "localhost",
+        "db_name": "Your database name"
+    } 
+}

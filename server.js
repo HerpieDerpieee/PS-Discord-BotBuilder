@@ -10,6 +10,7 @@ const fs = require('fs-extra');
 const path = require('path');
 const archiver = require('archiver');
 
+const {db} = require("./config.json")
 
 /*
 Creating some handy constants
@@ -25,10 +26,10 @@ const webserverPort = 3000
  */
 const createConnection = () => {
     return mysql.createConnection({
-        host: "localhost",
-        user: "dcBB",
-        password: "DiscordBotBuilder",
-        database: "PS_DISCORD_BOT_BUILDER",
+        host: db.location,
+        user: db.username,
+        password: db.password,
+        database: db.db_name,
         connectTimeout: 20000,
     });
 };
