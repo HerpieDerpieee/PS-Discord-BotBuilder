@@ -75,7 +75,7 @@ To get started with the project, you'll need to set up the database. Follow thes
 4. **Running the Application:**
     - With the database set up and configured, you should be able to run your application. To run it, please use the following command
    ```bash
-./startServer.sh
+    ./startServer.sh
     ```
 
 Note: For security reasons, avoid storing sensitive information like database credentials directly in your public GitHub repository. Consider using environment variables or a configuration file outside the repository for such sensitive data.
