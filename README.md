@@ -1,6 +1,14 @@
+
 # PS-Discord-BotBuilder
 This is one of my personal projects, and I plan to update it for a while to come. This is a node.js webserver, which is hosting a website, with which you can "make" a discord bot.
+<br>
+### Node.js and NPM Setup
 
+When using this website, make sure you have [Node.js](https://nodejs.org/en) installed. When you are sure it's installed, clone the repository, and open a terminal in the folder. Then run the following command to install all required NPM packages
+```bash
+npm install archiver bcrypt body-parser express-session express fs-extra mysql path
+```
+<br>
 
 
 ### Database Setup
@@ -71,12 +79,11 @@ To get started with the project, you'll need to set up the database. Follow thes
 
 3. **Database Configuration:**
     - Update the content in the config.json file, if you dont have it, feel free to make use of the config.json.example for the layout of the json file.
+<br>
 
-4. **Running the Application:**
-    - With the database set up and configured, you should be able to run your application. To run it, please use the following command
-   ```bash
-    ./startServer.sh
-    ```
+### Running the Application:
+With the database set up and configured, you should be able to run your application. To run it, please use the following command
 
-Note: For security reasons, avoid storing sensitive information like database credentials directly in your public GitHub repository. Consider using environment variables or a configuration file outside the repository for such sensitive data.
-
+```bash
+./startServer.sh
+```
