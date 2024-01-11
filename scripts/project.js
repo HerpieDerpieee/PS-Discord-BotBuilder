@@ -204,7 +204,6 @@ function loadData() {
             let jsonResponse = JSON.parse(xhr.responseText);
             if (jsonResponse != {}){
                 document.querySelector("#title").innerHTML = jsonResponse.projectName.toUpperCase();
-                document.querySelector("#description").innerHTML = "Project Id: "+jsonResponse.projectId;
             }
         } else {
             console.error('Request failed. Status: ' + xhr.status);
