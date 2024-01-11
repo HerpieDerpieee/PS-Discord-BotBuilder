@@ -3,11 +3,13 @@ body {
     align-items: center;
     justify-content: center;
     height: 100vh;
-    background: var(--discord-blue);
+    background: url("./background.png");
+    background-position: center;
+    background-size: cover;
 }
 
 .login-container {
-    background-color: var(--dark-gray);
+    background-color: var(--medium-gray);
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
     padding: 30px;
@@ -48,5 +50,5 @@ button {
 }
 
 button:hover {
-    background-color: var(--medium-gray);
+    background-color: var(--dark-steel);
 }

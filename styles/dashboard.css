@@ -55,3 +55,45 @@
     border:none;
     cursor:pointer;
 }
+
+@media only screen and (max-width: 768px) {
+    #main {
+        margin: 0;
+        width: 100%;
+        height: 100vh;
+        overflow-y: visible;
+    }
+
+    #container {
+        text-align: center;
+        border-radius: 0;
+        box-shadow: none;
+
+        overflow-y: scroll !important;
+    }
+
+    #grid {
+        width: 65%;
+        height: fit-content;
+        display: grid;
+        grid-template-columns: 100%;
+        grid-auto-rows: 200px;
+        gap:10px !important;
+    }
+
+    .grid-btn {
+        width: 100% !important;
+        height: 100% !important;
+    }
+}
+
+@media only screen and (max-width: 768px) and (min-width: 500px) {
+    #grid {
+        width: 50%;
+        height: fit-content;
+        display: grid;
+        grid-template-columns: 100%;
+        grid-auto-rows: 200px;
+        gap:10px !important;
+    }
+}

@@ -4,11 +4,11 @@ Importing all the required packages
 const express = require('express');
 const session = require('express-session');
 const bodyParser = require('body-parser');
-const mysql = require('mysql');
 const bcrypt = require('bcrypt');
 const fs = require('fs-extra');
 const path = require('path');
 const archiver = require('archiver');
+const mysql = require('mysql');
 
 const {db} = require("./config.json")
 
@@ -43,6 +43,7 @@ const app = express()
 
 app.use(express.static("styles"))
 app.use(express.static("scripts"))
+app.use(express.static("src"))
 
 app.use(session({secret: 'secret',resave: true,saveUninitialized: true}));
 

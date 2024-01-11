@@ -14,7 +14,7 @@
 
 body {
     height: 100vh !important;
-    background: var(--discord-blue);
+    background: url("./background.png");
     overflow: hidden;
 }
 
