@@ -21,7 +21,7 @@ To get started with the project, you'll need to set up the database. Follow thes
 	- Create a new database for your project.
 
 2. **Importing Tables:**:
-	- Import the db-config.sql file into your database using the following command:
+	- Import the db-config.sql file into your database using the following command:<br>
 ```mysql -u {your_username} -p {your_database_name} < /path/to/db-config.sql```
 	- If you want to know more about the exact database structure, you can always take a look at the contents of `db-config.sql `
 3. **Final Configuration:**
