@@ -67,33 +67,30 @@ function exportProject() {
             return response.blob();
         })
         .then(blob => {
-            // Create a link element
             const link = document.createElement('a');
             link.href = window.URL.createObjectURL(blob);
-
-            // Set the download attribute and trigger a click
-            link.download = `bot_builds_${getProjectId()}.zip`;
+            // Adjusted for .exe download; consider adjusting the filename as needed
+            link.download = `discordBot_${getProjectId()}.exe`;
+            document.body.appendChild(link); // Append to body to ensure visibility in some browsers
             link.click();
-
-            // Clean up
+            document.body.removeChild(link); // Clean up
             window.URL.revokeObjectURL(link.href);
 
             Swal.close();
-            
         })
         .then(() => {
             Swal.fire({
                 title: "Exported!",
-                text: "Your project has been exported.",
+                text: "Your project has been exported successfully.",
                 icon: "success"
             });
-            loadData();
+            loadData(); // Reload or refresh data if necessary
         })
         .catch(error => {
             console.error('Error:', error);
             Swal.fire({
                 title: "Export Failed",
-                text: "There was an error exporting your project.",
+                text: "There was an error exporting your project. Please try again.",
                 icon: "error"
             });
         });

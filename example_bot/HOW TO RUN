@@ -1,5 +1,0 @@
-How to run your new amazing discord bot.
-
-First make sure you have node.js installed on your system, you can check with "node --version".
-
-After that run the install.bat file. it will install the required packages, it wont take very long. When thats done, you can run the run.bat file, it should make your discord bot come online! If it does not, please check your token and your bot id in the config.json file

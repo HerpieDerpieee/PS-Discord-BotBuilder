@@ -9,6 +9,7 @@ const fs = require('fs-extra');
 const path = require('path');
 const archiver = require('archiver');
 const mysql = require('mysql');
+const { exec } = require('child_process');
 
 const {db} = require("./config.json")
 
@@ -16,7 +17,7 @@ const {db} = require("./config.json")
 Creating some handy constants
 */
 const documentRoot = `${__dirname}/httpdocs`
-const webserverPort = 3000
+const webserverPort = 3002
 
 
 
@@ -209,7 +210,7 @@ app.post("/delete-command", requireLogin, (req, res)=> {
         con.query(sql, [commandId], (err, results)=>{
             if (err) throw err;
             con.end();
- 
+
             res.status(200).send("true");
         })
     })
@@ -311,82 +312,222 @@ app.post("/rename-project", requireLogin, (req,res)=>{
 })
 
 
-app.post("/export", requireLogin, (req, res) => {
+app.post("/export", requireLogin, async (req, res) => {
+    console.log('Export request received.');
     const projectId = req.query.id;
     const userId = req.session.userId;
+    console.log(`Project ID: ${projectId}, User ID: ${userId}`);
 
     const con = createConnection();
 
-    const ownerCheck = "SELECT * FROM Projects WHERE project_id=? AND project_owner=?";
-    con.query(ownerCheck, [projectId, userId], (err, results) => {
-        if (err) throw err;
-        if (results.length !== 1) return res.json({});
+    con.query("SELECT * FROM Projects WHERE project_id=? AND project_owner=?", [projectId, userId], async (err, projectResults) => {
+        if (err) {
+            console.error('Error checking project owner:', err);
+            return res.status(500).send('Internal server error');
+        }
+        if (projectResults.length !== 1) {
+            return res.status(404).send('Project not found or user is not the owner.');
+        }
 
-        const data = results[0];
+        const data = projectResults[0];
         const botToken = data.bot_token;
-        const clientId = data.bot_id;
 
-        con.query("SELECT command_id, command_name, command_description, command_response FROM Commands WHERE project_id = ?", [projectId], (err, result) => {
-            if (err) throw err;
-            con.end();
+        con.query("SELECT command_id, command_name, command_description, command_response FROM Commands WHERE project_id = ?", [projectId], async (err, commands) => {
+            if (err) {
+                console.error('Error querying commands:', err);
+                return res.status(500).send('Internal server error');
+            }
+            try {
+                console.log("Started generating code");
+                await generateGoCode(projectId, botToken, commands);
+                
+                console.log("Started compiling");
+                await compileForWindows(projectId);
 
-            const commands = result.map(command => {
-                return {
-                    name: command.command_name,
-                    description: command.command_description,
-                    response: command.command_response
-                };
-            });
-
-            const jsonContent = {
-                token: botToken,
-                clientId: clientId,
-                commands: commands
-            };
-
-            const botBuildsPath = `./bot_builds/${projectId}`;
-
-            // Create the directory if it doesn't exist
-            fs.ensureDirSync(botBuildsPath);
-
-            // Copy everything from "./example_bot" to "./botBuilds/{id}/"
-            const exampleBotPath = "./example_bot";
-            fs.copySync(exampleBotPath, botBuildsPath);
-
-            // Write JSON to a file in the new directory
-            const configFile = path.join(botBuildsPath, "config.json");
-            fs.writeFileSync(configFile, JSON.stringify(jsonContent, null, 2));
-
-            // Create a zip file
-            const outputZipPath = path.join(__dirname, `./bot_builds/${projectId}.zip`);
-            const outputZipStream = fs.createWriteStream(outputZipPath);
-            const archive = archiver('zip', {
-                zlib: { level: 9 }
-            });
-
-            outputZipStream.on('close', () => {
-                res.download(outputZipPath, (err) => {
-                    if (err) throw err;
-                    fs.removeSync(outputZipPath);
-                    fs.removeSync(botBuildsPath);
+                // Assuming the compilation was successful, and .exe is ready.
+                const directoryPath = path.join('bot_builds', projectId.toString());
+                const exePath = path.join(directoryPath, 'discordBot.exe');
+                
+                console.log("Triggering download of the .exe file");
+                res.download(exePath, 'discordBot.exe', (err) => {
+                    if (err) {
+                        console.error(`Error sending file: ${err}`);
+                        return res.status(500).send('Failed to download the file.');
+                    } else {
+                        console.log('Download initiated successfully.');
+                        cleanUp(projectId);
+                    }
                 });
-            });
-
-            archive.on('error', (err) => {
-                throw err;
-            });
-
-            archive.pipe(outputZipStream);
-            archive.directory(botBuildsPath, false);
-            archive.finalize();
+            } catch (error) {
+                console.error(error);
+                res.status(500).send('An error occurred during the export process.');
+            }
         });
     });
 });
 
+/*
+Some functions for creating the bot
+*/
+function ensureDirectoryExists(directoryPath) {
+    return new Promise((resolve, reject) => {
+        console.log(`[ensureDirectoryExists] Ensuring directory exists: ${path.resolve(directoryPath)}`);
+        fs.mkdir(directoryPath, { recursive: true }, (err) => {
+            if (err) {
+                reject(`Error creating directory: ${err}`);
+            } else {
+                resolve();
+            }
+        });
+    });
+}
+
+function generateGoCode(projectId, botToken, commands) {
+    return new Promise((resolve, reject) => {
+        console.log(`[generateGoCode] Generating Go code for project ID: ${path.resolve(projectId)}`);
+        const directoryPath = path.join('bot_builds', projectId.toString());
+        const filePath = path.join(directoryPath, 'discordBot.go');
+
+        ensureDirectoryExists(directoryPath).then(() => {
+            let goCode = `
+package main
+
+import (
+    "fmt"
+    "github.com/bwmarrin/discordgo"
+    "os"
+    "os/signal"
+    "syscall"
+)
+
+var (
+    Token = "${botToken}"
+)
+
+func main() {
+    dg, err := discordgo.New("Bot " + Token)
+    if err != nil {
+        fmt.Println("error creating Discord session,", err)
+        return
+    }
+
+    dg.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+        fmt.Println("Bot is up and running")
+    })
+
+    dg.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+        if i.Type == discordgo.InteractionApplicationCommand {
+            handleCommandInteraction(s, i)
+        }
+    })
+
+    err = dg.Open()
+    if err != nil {
+        fmt.Println("error opening connection,", err)
+        return
+    }
+    defer dg.Close()
+
+    registerSlashCommands(dg)
+
+    fmt.Println("Bot is now running. Press CTRL+C to exit.")
+    sc := make(chan os.Signal, 1)
+    signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
+    <-sc
+}
+
+func registerSlashCommands(s *discordgo.Session) {
+    ${commands.map(command => `s.ApplicationCommandCreate(s.State.User.ID, "", &discordgo.ApplicationCommand{
+        Name: "${command.command_name}",
+        Description: "${command.command_description}",
+        Type: discordgo.ChatApplicationCommand,
+    })`).join('\n\t')}
+}
+
+func handleCommandInteraction(s *discordgo.Session, i *discordgo.InteractionCreate) {
+    ${commands.map(command => `
+    if i.ApplicationCommandData().Name == "${command.command_name}" {
+        s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+            Type: discordgo.InteractionResponseChannelMessageWithSource,
+            Data: &discordgo.InteractionResponseData{
+                Content: "${command.command_response}",
+            },
+        })
+    }`).join('\n\t')}
+}
+
+            `;
+
+            fs.writeFileSync(filePath, goCode);
+            console.log('Go source code generated.');
+            resolve();
+        }).catch(err => {
+            reject(err);
+        });
+    });
+}
+
+function compileForWindows(projectId) {
+    return new Promise((resolve, reject) => {
+        const directoryPath = path.resolve('bot_builds', projectId.toString());
+        const exePath = path.resolve(directoryPath, 'discordBot.exe');
+
+        console.log(`[compileForWindows] Directory path: ${directoryPath}`);
+
+        if (!fs.existsSync(directoryPath)) {
+            reject(`Directory ${directoryPath} does not exist`);
+            return;
+        }
+
+        const goModPath = path.resolve(directoryPath, 'go.mod');
+        if (!fs.existsSync(goModPath)) {
+            const cmdInit = `go mod init discordBot && go get github.com/bwmarrin/discordgo`;
+            console.log(`Running command: ${cmdInit} in directory: ${directoryPath}`);
+            exec(cmdInit, { cwd: directoryPath }, (error, stdout, stderr) => {
+                if (error) {
+                    reject(`Error initializing Go module or getting discordgo package: ${error.message}`);
+                    return;
+                }
+                compile();
+            });
+        } else {
+            compile();
+        }
+
+        function compile() {
+            const cmdCompile = `GOOS=windows GOARCH=amd64 go build -o "${exePath}"`;
+            console.log(`Running command: ${cmdCompile} in directory: ${directoryPath}`);
+            exec(cmdCompile, { cwd: directoryPath }, (error, stdout, stderr) => {
+                if (error) {
+                    reject(`Compilation error: ${error.message}`);
+                    return;
+                }
+                console.log('Compilation for Windows completed.');
+                resolve();
+            });
+        }
+    });
+}
+
+function cleanUp(projectId) {
+    return new Promise((resolve, reject) => {
+        const directoryPath = path.join('bot_builds', projectId.toString());
+
+        fs.rm(directoryPath, { recursive: true, force: true }, (err) => {
+            if (err) {
+                console.error(`Error removing directory: ${err}`);
+                reject(err);
+            } else {
+                console.log(`${directoryPath} was deleted recursively.`);
+                resolve();
+            }
+        });
+    });
+}
 
 /* 
 Starting up the server.
 */
 app.listen(webserverPort, () => {
-  console.log(`Bot Builder Online at http://localhost:${webserverPort}/`)
+    console.log(`Bot Builder Online at http://localhost:${webserverPort}/`)
 })
